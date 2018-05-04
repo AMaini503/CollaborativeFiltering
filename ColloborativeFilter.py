@@ -1,3 +1,5 @@
+from pyspark import SparkContext
+sc = SparkContext()
 rawUserArtistData = sc.textFile('s3n://spark-bucket-am4810/audio_data/user_artist_data.txt')
 rawUserArtistData.getNumPartitions()
 userIDs = rawUserArtistData.map(lambda line: float(line.split()[0]))
@@ -12,6 +14,15 @@ def getArtistIDAndName(line):
     
     try:
         return [int(tokens[0]), tokens[1].strip()]
+    except Exception as e:
+        return None
+
+
+def MapAliasToCanonical(line):
+    tokens = line.split('\t')
+    
+    try: 
+        return [int(tokens[0]), int(tokens[1])]
     except Exception as e:
         return None
 
@@ -46,16 +57,17 @@ model = ALS.trainImplicit(
     lambda_ = 0.01, 
     alpha = 1.0)
 
-# get recommendations for the userid given in book
+## get recommendations for the userid given in book
 recommendations = model.call("recommendProducts", 2093760, 5)
-
-# make this list ordered to allow zipping
-uniqueRecAristIDs = list(set(map(lambda x: x.product, recommendations)))
+#
+## make this list ordered to allow zipping
+uniqueRecAristIDs = set(map(lambda x: x.product, recommendations))
 uniqueRecArtistNames = id2name.filter(lambda artist: artist[0] in uniqueRecAristIDs).map(lambda artist: artist[1])
-
-
-# write artistID, artistname to a file
-with open('s3n://spark-bucket-am4810/results.txt', 'w+') as f:
-    results = zip(uniqueRecAristIDs, uniqueRecArtistNames.collect())
-    for result in results:
-        f.write('%s\n' % str(result))
+print("=================================== RESULTS =====================================")
+print(uniqueRecAristIDs)
+print("=================================================================================")
+### write artistID, artistname to a file
+##with open('s3n://spark-bucket-am4810/results.txt', 'w+') as f:
+##    results = zip(uniqueRecAristIDs, uniqueRecArtistNames.collect())
+##    for result in results:
+##        f.write('%s\n' % str(result))
