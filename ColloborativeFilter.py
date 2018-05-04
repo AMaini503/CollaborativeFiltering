@@ -1,8 +1,8 @@
-rawUserArtistData = sc.textFile('audio_data/user_artist_data.txt')
+rawUserArtistData = sc.textFile('s3n://spark-bucket-am4810/audio_data/user_artist_data.txt')
 rawUserArtistData.getNumPartitions()
 userIDs = rawUserArtistData.map(lambda line: float(line.split()[0]))
 artistIDs = rawUserArtistData.map(lambda line: float(line.split()[1]))
-rawArtistData = sc.textFile('audio_data/artist_data.txt')
+rawArtistData = sc.textFile('s3n://spark-bucket-am4810/audio_data/artist_data.txt')
 
 def getArtistIDAndName(line):
     """Gets artist id and name from a line in artist_data.txt"""
@@ -17,7 +17,7 @@ def getArtistIDAndName(line):
 
 id2name = rawArtistData.map(lambda line: getArtistIDAndName(line))
 id2name = id2name.filter(lambda ele: ele is not None)
-rawArtistAlias = sc.textFile('audio_data/artist_alias.txt')
+rawArtistAlias = sc.textFile('s3n://spark-bucket-am4810/audio_data/artist_alias.txt')
 artistAlias = rawArtistAlias.map(lambda line: MapAliasToCanonical(line))
 artistAlias = artistAlias.filter(lambda ele: ele is not None)
 
@@ -51,11 +51,11 @@ recommendations = model.call("recommendProducts", 2093760, 5)
 
 # make this list ordered to allow zipping
 uniqueRecAristIDs = list(set(map(lambda x: x.product, recommendations)))
-uniqueRecArtistNames = id2name.filter(lambda (aid, aname): aid in uniqueRecAristIDs).map(lambda (aid, aname): aname)
+uniqueRecArtistNames = id2name.filter(lambda artist: artist[0] in uniqueRecAristIDs).map(lambda artist: artist[1])
 
 
 # write artistID, artistname to a file
-with open('results.txt', 'w+') as f:
+with open('s3n://spark-bucket-am4810/results.txt', 'w+') as f:
     results = zip(uniqueRecAristIDs, uniqueRecArtistNames.collect())
     for result in results:
         f.write('%s\n' % str(result))
