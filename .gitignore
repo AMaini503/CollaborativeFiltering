@@ -2,3 +2,4 @@ audio_data/
 __pycache__/
 README.txt
 *.zip
+*.pyc

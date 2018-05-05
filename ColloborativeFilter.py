@@ -58,7 +58,7 @@ model = ALS.trainImplicit(
     alpha = 1.0)
 
 ## get recommendations for the userid given in book
-recommendations = model.call("recommendProducts", 2093760, 5)
+recommendations = model.call("recommendProducts", 2093760, 10)
 #
 ## make this list ordered to allow zipping
 uniqueRecAristIDs = set(map(lambda x: x.product, recommendations))
